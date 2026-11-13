@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My To-Do List</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #dbeafe, #f5d0fe);
+      color: #1f2937;
+    }
+    .app {
+      width: 100%;
+      max-width: 520px;
+      padding: 28px;
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 12px 35px rgba(0,0,0,.12);
+    }
+    h1 { margin: 0 0 8px; text-align: center; }
+    .subtitle { margin: 0 0 22px; text-align: center; color: #6b7280; }
+    .entry { display: flex; gap: 10px; }
+    input {
+      flex: 1;
+      min-width: 0;
+      padding: 13px;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      font-size: 16px;
+    }
+    button {
+      border: 0;
+      border-radius: 9px;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    #addBtn { background: #2563eb; color: white; }
+    #addBtn:hover { background: #1d4ed8; }
+    #taskList { list-style: none; margin: 20px 0 0; padding: 0; }
+    .task {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 4px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .task span { flex: 1; overflow-wrap: anywhere; }
+    .task.completed span { color: #9ca3af; text-decoration: line-through; }
+    .task input[type="checkbox"] { width: 18px; height: 18px; flex: 0 0 auto; }
+    .deleteBtn { background: #fee2e2; color: #b91c1c; padding: 8px 11px; }
+    .deleteBtn:hover { background: #fecaca; }
+    #emptyMessage { text-align: center; color: #9ca3af; padding: 20px 0 4px; }
+    #taskCount { margin: 16px 0 0; color: #6b7280; font-size: 14px; }
+    @media (max-width: 420px) {
+      .app { padding: 20px; }
+      .entry { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>My To-Do List</h1>
+    <p class="subtitle">Plan your day, one task at a time.</p>
+
+    <div class="entry">
+      <input id="taskInput" type="text" placeholder="Enter a task..." aria-label="New task">
+      <button id="addBtn" type="button">Add Task</button>
+    </div>
+
+    <ul id="taskList"></ul>
+    <p id="emptyMessage">No tasks yet. Add your first task!</p>
+    <p id="taskCount">0 tasks</p>
+  </main>
+
+  <script>
+    // Load saved tasks from LocalStorage when the page opens.
+    let tasks = JSON.parse(localStorage.getItem("todoTasks")) || [];
+
+    const taskInput = document.getElementById("taskInput");
+    const addBtn = document.getElementById("addBtn");
+    const taskList = document.getElementById("taskList");
+    const emptyMessage = document.getElementById("emptyMessage");
+    const taskCount = document.getElementById("taskCount");
+
+    // Save the current task array in the browser.
+    function saveTasks() {
+      localStorage.setItem("todoTasks", JSON.stringify(tasks));
+    }
+
+    // Create and display task elements using DOM manipulation.
+    function renderTasks() {
+      taskList.innerHTML = "";
+
+      tasks.forEach((task) => {
+        const li = document.createElement("li");
+        li.className = task.completed ? "task completed" : "task";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = task.completed;
+        checkbox.setAttribute("aria-label", "Mark task complete");
+        checkbox.addEventListener("change", () => {
+          task.completed = checkbox.checked;
+          saveTasks();
+          renderTasks();
+        });
+
+        const taskText = document.createElement("span");
+        taskText.textContent = task.text;
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "deleteBtn";
+        deleteBtn.textContent = "Delete";
+        deleteBtn.addEventListener("click", () => {
+          tasks = tasks.filter((item) => item.id !== task.id);
+          saveTasks();
+          renderTasks();
+        });
+
+        li.append(checkbox, taskText, deleteBtn);
+        taskList.appendChild(li);
+      });
+
+      emptyMessage.hidden = tasks.length > 0;
+      const remaining = tasks.filter((task) => !task.completed).length;
+      taskCount.textContent = `${tasks.length} task(s) · ${remaining} remaining`;
+    }
+
+    function addTask() {
+      const text = taskInput.value.trim();
+      if (text === "") {
+        taskInput.focus();
+        return;
+      }
+
+      tasks.push({
+        id: Date.now() + Math.random(),
+        text: text,
+        completed: false
+      });
+
+      saveTasks();
+      renderTasks();
+      taskInput.value = "";
+      taskInput.focus();
+    }
+
+    // Add task on button click.
+    addBtn.addEventListener("click", addTask);
+
+    // Add task when the Enter key is pressed.
+    taskInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") addTask();
+    });
+
+    // Show previously saved tasks on initial page load.
+    renderTasks();
+  </script>
+</body>
+</html>
